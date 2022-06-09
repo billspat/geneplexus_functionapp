@@ -49,7 +49,11 @@ __azurite_db*__.json
 
 # Terraformn
 
+*.plan
 *.tfvars
+*.tfstate
+*.tfstate.backup
+.terraform*
 
 # Mac
 
