@@ -37,7 +37,7 @@ Each function has its own code file and binding configuration file ([**function.
 
 Use [zip deployment](https://docs.microsoft.com/en-us/azure/azure-functions/deployment-zip-push) with the cli
 
-1. zip the main folder  cd function_app,  `zip * function_app.zip`
+1. zip the main folder  `cd function_app; rm ../function_app.zip ; zip -r -D ../function_app.zip *`
 1. `az functionapp deployment source config-zip -g <resource_group> -n <app_name> --src <zip_file_path>`
 
 For more information on all deployment options for Azure Functions, please visit this [guide](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-python#publish-the-project-to-azure).
