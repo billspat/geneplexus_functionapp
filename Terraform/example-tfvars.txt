@@ -7,3 +7,5 @@ location =  "Central US"
 userid = "yourneitd"
 azure_functions_environment = "Development"
 python_enable_debug_logging = 1
+existing_storage_account_rg = ""
+existing_storage_account_name = ""

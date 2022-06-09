@@ -36,7 +36,18 @@ resource "random_string" "random_id" {
 
 
 ############ variables
+#####
+# existing resources
 
+variable "existing_storage_account_rg" {
+  type = string
+
+}
+
+variable "existing_storage_account_name" {
+  type = string
+
+}
 
 #####
 # project level variables (used to name and tag things)
@@ -89,7 +100,9 @@ variable "function_app_sku_name" {
   default =  "Y1"
 }           
 
-########## computed variables (locals)
+
+########## 
+#computed variables (locals)
 
 locals {
   # Common tags to be assigned to all resources
@@ -104,7 +117,18 @@ locals {
 }
 
 
-###########
+############
+# existing resources to tie in 
+
+data "azurerm_storage_account" "geneplexus_storage" {
+  # https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/storage_account
+  name                = var.existing_storage_account_name
+  resource_group_name = var.existing_storage_account_rg
+}
+
+# azurerm_storage_account.geneplexus_storage.primary_access_key , primary_file_endpoint 
+
+############
 # resources
 
 resource "azurerm_resource_group" "main" {
@@ -153,6 +177,7 @@ resource "azurerm_linux_function_app" "ml_runner" {
 
   service_plan_id      = azurerm_service_plan.ml_runner.id
 
+  # list of all app settings : https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings
   app_settings  = {
     FUNCTIONS_WORKER_RUNTIME = "python",
     AZURE_FUNCTIONS_ENVIRONMENT = var.azure_functions_environment,
@@ -163,6 +188,22 @@ resource "azurerm_linux_function_app" "ml_runner" {
     application_stack {
       python_version = "3.9"
     }
+
+  # mount a file share - can't find TF documentation on this
+  provisioner "local-exec" {
+
+command = <<-CMD
+az webapp config storage-account add -g ${var.existing_storage_account_rg} \
+-n ${var.existing_storage_account_name} \
+--custom-id ${var.x} \
+--storage-type AzureFiles \
+--account-name ${azurerm_storage_account.geneplexus_storage.name} \
+--share-name ${azurerm_storage_account.geneplexus_storage.primary_file_endpoint} \
+--access-key ${azurerm_storage_account.geneplexus_storage.primary_access_key} \
+--mount-path /data
+CMD
+
+}
   }
 
   tags = "${local.common_tags}"
