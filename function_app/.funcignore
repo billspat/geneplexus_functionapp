@@ -1,0 +1,5 @@
+Terraform/
+Dockerfile
+.dockerignore
+.vscode/
+tests/
