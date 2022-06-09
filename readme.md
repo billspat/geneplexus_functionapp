@@ -32,6 +32,9 @@ Each function has its own code file and binding configuration file ([**function.
 2. create a plan with `terraform plan -var-file=dev.tfvars -out=dev.plan`
 3. apply the plan with `terraform apply "dev.plan" ` 
 4. capture the output of the resource group and fucntion app name
+5. see the script `Terraform/file_share.sh` to mount a file share to the function app and available at the mountpoint in that script
+    (this should be incorporated into main.tf as a localexec provisioner)
+    this requires access to the `azuredeploy.sh` script from the geneplexus app folder, and the data present in the share file to work
 
 #### Publishing your function app to Azure 
 
