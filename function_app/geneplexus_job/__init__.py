@@ -61,17 +61,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     
     # configuration
-    mount_point = os.getenv("GeneplexusFilesPath") # "/Users/billspat/tmp/geneplexus_data"
-    if not mount_point:
-        logging.error('GeneplexusFilesPath is not set')
+    
+    # if not mount_point:
+    #     logging.error('GeneplexusFilesPath is not set')
 
-        return func.HttpResponse(
-            "GeneplexusFilesPath is not set",
-            status_code=500
-        )
-
-    data_dir = "data_backend3"
-    job_dir  = "jobs"
+    #     return func.HttpResponse(
+    #         "GeneplexusFilesPath is not set",
+    #         status_code=500
+    #     )
 
     # request params
     jobid = req.params.get('jobid')
@@ -86,12 +83,30 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if not jobid:
         logging.error('no jobid parameter passed')
         return func.HttpResponse(
-        "Job id parameter required, aborting",
+        "Job id parameter required",
         status_code=400
     )
 
     #TODO  sanitize jobid
-    output_path = os.path.join(mount_point, job_dir, jobid)
+    jobs_path = os.getenv('JOBS_PATH')
+    if not jobs_path:
+        err_msg = 'JOBS_PATH is not set'
+        logging.error(err_msg)
+
+        return func.HttpResponse(
+            err_msg,
+            status_code=500
+        )
+
+    if not os.path.exists(jobs_path):
+        err_msg = 'JOBS_PATH not valid'
+        logging.error(err_msg)
+        return func.HttpResponse(
+            err_msg,
+            status_code=500
+        )
+
+    output_path = os.path.join(jobs_path, jobid)
 
     if not os.path.exists(output_path):
         logging.error('invalid jobid param - job folder not found')
@@ -102,7 +117,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 
     # check for support data needed
-    data_path = os.path.join(mount_point, data_dir)
+    data_path = os.getenv('DATA_PATH')
 
     if not os.path.exists(data_path):
         logging.error('data path does not exist')
