@@ -98,7 +98,19 @@ variable "function_app_sku_name" {
   type = string
   description = "Function SKU for Elastic or Consumption function app plans (Y1, EP1, EP2, and EP3)"
   default =  "Y1"
-}           
+}
+
+variable "data_path" {
+  type = string
+  description = "the path where data folder is mounted in function app"
+  default =  "/geneplexus_files/geneplexus_data"
+}
+
+variable "jobs_path" {
+  type = string
+  description = "the based path where jobs are stored"
+  default =  "/geneplexus_files/jobs"
+}
 
 
 ########## 
@@ -183,8 +195,10 @@ resource "azurerm_linux_function_app" "ml_runner" {
     FUNCTIONS_WORKER_RUNTIME = "python",
     AZURE_FUNCTIONS_ENVIRONMENT = var.azure_functions_environment,
     PYTHON_ENABLE_DEBUG_LOGGING = var.python_enable_debug_logging,
-    ENABLE_ORYX_BUILD=true,
-    SCM_DO_BUILD_DURING_DEPLOYMENT=true
+    ENABLE_ORYX_BUILD = true,
+    SCM_DO_BUILD_DURING_DEPLOYMENT = true,
+    DATA_PATH = var.data_path,
+    JOBS_PATH = var.jobs_path
   }
 
   site_config {
