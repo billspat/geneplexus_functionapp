@@ -3,6 +3,7 @@ import logging
 import os, sys, json
 import azure.functions as func
 
+
 from geneplexus import geneplexus
 import pandas as pd
 from pprint import pprint
@@ -55,25 +56,24 @@ input_genes = ["CCNO",
     "ODAD1",
     ]
 
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
-
-    job_info= {}
     
-    mount_point = "/Users/billspat/tmp"
-    # mount_point = "/geneplexus_files"
-    data_path = os.path.join(mount_point, "geneplexus_data")
-    output_path = os.path.join(mount_point, "jobs")
+    # configuration
+    mount_point = os.getenv("GeneplexusFilesPath") # "/Users/billspat/tmp/geneplexus_data"
+    if not mount_point:
+        logging.error('GeneplexusFilesPath is not set')
 
-    if os.path.exists(data_path):
-        job_info['data_pata_exists'] = True        
-    else:
         return func.HttpResponse(
             "Data not found",
             status_code=500
         )
-    
-    
+
+    data_dir = "data_backend3"
+    job_dir  = "jobs"
+
+    # request params
     jobid = req.params.get('jobid')
     if not jobid:
         try:
@@ -84,33 +84,78 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             jobid = req_body.get('jobid')
     
     if not jobid:
+        logging.error('no jobid parameter passed')
         return func.HttpResponse(
         "Job id parameter required, aborting",
         status_code=400
     )
 
-    job_info['jobid'] = jobid
+    #TODO  sanitize jobid
+    output_path = os.path.join(mount_point, job_dir, jobid)
 
-    net_type='String'
+    if not os.path.exists(output_path):
+        logging.error('invalid jobid param - job folder not found')
+        return func.HttpResponse(
+            "Invalid JobID",
+            status_code=404
+        )
+
+
+    # check for support data needed
+    data_path = os.path.join(mount_point, data_dir)
+
+    if not os.path.exists(data_path):
+        logging.error('data path does not exist')
+
+        return func.HttpResponse(
+            "Data not found",
+            status_code=500
+        )
+ 
+    # dummy params
+    net_type='STRING'
     features='Embedding'
     GSC='GO'
 
-    try:     
-        graph, df_probs, df_GO, df_dis, avgps, df_edgelist, df_convert_out, positive_genes = run_model(input_genes, net_type, features, GSC)
-        input_count = df_convert_out.shape[0]
-        job_info = save_output(output_path, jobid, net_type, features, GSC, avgps, input_count, positive_genes, df_probs, df_GO, df_dis, df_convert_out, graph, df_edgelist)
+    try:   
+        logging.info('starting gp model run')
+        df_probs, df_GO, df_dis, avgps, df_edgelist, df_convert_out, positive_genes = run_model(data_path, input_genes, net_type, features, GSC)
+        graph = make_graph(df_edgelist, df_probs)
+
+    except Exception as e:
+        err_msg = "run_model error: " + str(e)
+        logging.error(err_msg)
 
         return func.HttpResponse(
-                "worked", # json.dumps(job_info),
+                err_msg,
+                status_code=500
+            )
+        print("job complete")
+    try:
+        input_count = df_convert_out.shape[0]
+    except Exception as e:
+        err_msg = "df_convert_out error: " + str(e)
+        logging.error(err_msg)
+
+        return func.HttpResponse(
+                err_msg,
+                status_code=500
+            )
+    try:
+        print("saving output")
+        job_info = save_output(output_path, jobid, net_type, features, GSC, avgps, input_count, positive_genes, df_probs, df_GO, df_dis, df_convert_out, graph, df_edgelist)
+        logging.info("job completed and output saved")
+        return func.HttpResponse(
+                json.dumps(job_info),
                 status_code=200
             )
     except Exception as e:
-
+        err_msg = "saving model error: " + str(e) 
+        logging.error(err_msg)
         return func.HttpResponse(
-                str(e),
+                err_msg,
                 status_code=500
             )
-
 
 
 
@@ -119,13 +164,24 @@ def run_model(data_path, convert_IDs, net_type='String',features='Embedding', GS
     gp.load_genes(convert_IDs)
     mdl_weights, df_probs, avgps = gp.fit_and_predict()
     df_sim_go, df_sim_dis, weights_go, weights_dis = gp.make_sim_dfs()
-    df_edge, isolated_genes, df_edge_sym, isolated_genes_sym = gp.make_small_edgelist()
+    df_edgelist, isolated_genes, df_edge_sym, isolated_genes_sym = gp.make_small_edgelist()
     df_convert_out, positive_genes = gp.alter_validation_df()
-    # graph = make_graph(df_edge, df_probs)
+    
 
-    return df_probs, df_sim_go, df_sim_dis, avgps, df_edge, df_convert_out, positive_genes
+    return df_probs, df_sim_go, df_sim_dis, avgps, df_edgelist, df_convert_out, positive_genes
 
+def make_graph(df_edge, df_probs, max_num_genes = 50):
+    df_edge.fillna(0)
+    df_edge.columns = ['source', 'target', 'weight']
+    nodes = df_probs[0:max_num_genes]
+    nodes.rename(columns={'Entrez': 'id', 'Class-Label': 'Class'}, inplace=True)
+    nodes = nodes.astype({'id': int})
 
+    graph = {}
+    graph["nodes"] = nodes.to_dict(orient='records')
+    graph["links"] = df_edge.to_dict(orient='records')
+
+    return graph
 def save_df_output(output_path, jobname, output_name, output_df):
     """ save data frames from model runs in a consistent way"""
     output_filename = construct_output_filename(jobname, output_name, '.tsv')
@@ -133,9 +189,18 @@ def save_df_output(output_path, jobname, output_name, output_df):
     output_df.to_csv(path_or_buf = output_filepath, sep = '\t', index = False, line_terminator = '\n')
     return(output_filename)
 
+def save_graph_output(output_path, jobname, graph):
+    """save the data that makes up the network graph to output folder, in JSON format.  
+    the 'graph' is a dict of dicts (node, edges), so just save as json"""
+    graph_file = construct_output_filename(jobname, 'graph', 'json')
+    graph_file_path = construct_output_filepath(output_path, jobname, graph_file)
+    with open(graph_file_path, 'w') as gf:
+        json.dump(graph, gf)
+
+    return(graph_file)
 
 def save_output(output_path, jobname, net_type, features, GSC, avgps, input_count, positive_genes, 
-    df_probs, df_GO, df_dis, df_convert_out_subset, df_edgelist):
+    df_probs, df_GO, df_dis, df_convert_out_subset, graph, df_edgelist):
 
     # TODO : send outputs to save as a dictionary keyed on name.e.g. {'df_probs', df_probs, etc } 
     #        so this module can be more generic.   possibly also add format per item, or use same format for all (JSON or CSV)
@@ -147,9 +212,9 @@ def save_output(output_path, jobname, net_type, features, GSC, avgps, input_coun
     df_edgelist_file = save_df_output(output_path, jobname, 'df_edgelist', df_edgelist )
     
     # the 'graph' is a dict of dicts (node, edges), so save in different format
-    # graph_file = save_graph_output(output_path, jobname, graph)
+    graph_file = save_graph_output(output_path, jobname, graph)
 
-    # TODO work on graph 
+  
 
     # copy the results file names into this dictionary (without path) 
     job_info = {
@@ -164,7 +229,7 @@ def save_output(output_path, jobname, net_type, features, GSC, avgps, input_coun
         'df_GO_file': df_GO_file, 
         'df_dis_file': df_dis_file, 
         'df_convert_out_subset_file': df_convert_out_subset_file, 
-        'graph_file':  'graph_file',
+        'graph_file':  graph_file,
         'df_edgelist_file' : df_edgelist_file
         }
 
