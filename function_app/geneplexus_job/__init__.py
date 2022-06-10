@@ -66,7 +66,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.error('GeneplexusFilesPath is not set')
 
         return func.HttpResponse(
-            "Data not found",
+            "GeneplexusFilesPath is not set",
             status_code=500
         )
 
