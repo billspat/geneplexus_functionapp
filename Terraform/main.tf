@@ -166,6 +166,7 @@ resource "azurerm_service_plan" "ml_runner" {
 
 }
 
+#### function app 
 
 resource "azurerm_linux_function_app" "ml_runner" {
   name                = "${var.project}-${var.env}-fn"
@@ -181,29 +182,15 @@ resource "azurerm_linux_function_app" "ml_runner" {
   app_settings  = {
     FUNCTIONS_WORKER_RUNTIME = "python",
     AZURE_FUNCTIONS_ENVIRONMENT = var.azure_functions_environment,
-    PYTHON_ENABLE_DEBUG_LOGGING = var.python_enable_debug_logging
+    PYTHON_ENABLE_DEBUG_LOGGING = var.python_enable_debug_logging,
+    ENABLE_ORYX_BUILD=true,
+    SCM_DO_BUILD_DURING_DEPLOYMENT=true
   }
 
   site_config {
     application_stack {
       python_version = "3.9"
     }
-
-  # mount a file share - can't find TF documentation on this
-  provisioner "local-exec" {
-
-command = <<-CMD
-az webapp config storage-account add -g ${var.existing_storage_account_rg} \
--n ${var.existing_storage_account_name} \
---custom-id ${var.x} \
---storage-type AzureFiles \
---account-name ${azurerm_storage_account.geneplexus_storage.name} \
---share-name ${azurerm_storage_account.geneplexus_storage.primary_file_endpoint} \
---access-key ${azurerm_storage_account.geneplexus_storage.primary_access_key} \
---mount-path /data
-CMD
-
-}
   }
 
   tags = "${local.common_tags}"
