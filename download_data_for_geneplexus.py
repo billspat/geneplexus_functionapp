@@ -16,7 +16,6 @@
 
 import os
 from geneplexus.download import _download_file as geneplexus_download
-from dotenv import load_dotenv
 
 def download_missing_files(file_list, data_dir ):
     """of the files in the file list, download only those files we don't have yet in data dir"""
@@ -157,8 +156,7 @@ all_files = [
     
 
 if __name__ == "__main__":
-    load_dotenv()
-    data_dir = os.getenv('DATA_PATH')
+    data_dir = os.getenv('DATA_PATH', default='../data')
 
     if not os.path.exists(data_dir):
         os.mkdir(data_dir)
