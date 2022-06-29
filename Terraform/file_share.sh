@@ -12,9 +12,12 @@ source $gp_folder/azure/azuredeploy.sh
 az_check_account 
 az_set_vars $envsuffix
 
-# from 
+# names are from the output of terraform
+# the resource group and name of your function. 
 export AZFNRG=
 export AZFN=
+
+# existing storage
 export AZSTORAGE_KEY=$(az storage account keys list --resource-group $AZRG --account-name $AZSTORAGENAME --query "[0].value" --output tsv)
 export AZSTORAGE_CUSTOM_ID=$(az_get_app_identity)  # this function is defined in azuredeploy.sh
 
