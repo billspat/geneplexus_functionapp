@@ -54,6 +54,7 @@ __azurite_db*__.json
 *.tfstate
 *.tfstate.backup
 .terraform*
+*.out
 
 # Mac
 
