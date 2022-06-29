@@ -25,7 +25,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if not jobid:
         logging.error('no jobid parameter passed')
         return func.HttpResponse(
-        "Job id parameter required",
+        "parameter 'jobid' required",
         status_code=400
     )
 
@@ -53,7 +53,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if not os.path.exists(job_dir):
         logging.error('invalid jobid param - job folder not found')
         return func.HttpResponse(
-            "Invalid JobID",
+            f"no job found for jobid {jobid} (404)",
             status_code=404
         )
 
@@ -81,7 +81,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(err_msg)
 
         return func.HttpResponse(
-            "err_msgs",
+            err_msg,
             status_code=404
         )
 
