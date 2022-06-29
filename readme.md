@@ -10,7 +10,7 @@ Two main folders:
 
 The main project folder (<project_root>) can contain the following files:
 
-* **local.settings.json** - Used to store app settings and connection strings when running locally. This file doesn't get published to Azure. To learn more, see [local.settings.file](https://aka.ms/azure-functions/python/local-settings).  For this project it's used to set DAT_PATH and JOBS_PATH ( see below)
+* **local.settings.json** - Used to store app settings and connection strings when running locally. This file doesn't get published to Azure. To learn more, see [local.settings.file](https://aka.ms/azure-functions/python/local-settings).  For this project it's used to set DATA_PATH and JOBS_PATH ( see below)
 * **requirements.txt** - Contains the list of Python packages the system installs when publishing to Azure.
 * **host.json** - Contains global configuration options that affect all functions in a function app. This file does get published to Azure. Not all options are supported when running locally. To learn more, see [host.json](https://aka.ms/azure-functions/python/host.json).
 * **Dockerfile** - (Optional) Used when publishing your project in a [custom container](https://aka.ms/azure-functions/python/custom-container).
