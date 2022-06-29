@@ -2,7 +2,10 @@
 # save this to something like dev.tfvars and use with terraform plan -var-file=dev.tfvars -out=dev.plan
 
 project = "geneplexusml"
+
+# set this to a unique name, e.g. dev5 or something
 env = "dev"
+
 location =  "Central US"
 userid = "yourneitd"
 azure_functions_environment = "Development"
