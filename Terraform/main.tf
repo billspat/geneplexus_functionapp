@@ -165,7 +165,38 @@ resource "azurerm_storage_account" "main" {
   tags = "${local.common_tags}"
 }
 
+output "AZSA" {
+  value = azurerm_storage_account.main.name
+  description = "storage account name"
+}
 
+###########
+# 
+# container, queue and table for jobs
+# TODO use the existing storage account for all of this
+# so that they can be read by the web application
+# then also need to grant permission on that SA for 
+# this function app using the system assigned identity
+
+resource "azurerm_storage_container" "jobs" {
+  name                  = "jobs"
+  storage_account_name  = azurerm_storage_account.main.name
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_queue" "jobprocessing" {
+  name                 = "jobprocessing"
+  storage_account_name = azurerm_storage_account.main.name
+}
+
+resource "azurerm_storage_table" "jobstatus" {
+  name                 = "jobstatus"
+  storage_account_name = azurerm_storage_account.main.name
+}
+
+
+###########
+# function plan and app
 
 resource "azurerm_service_plan" "ml_runner" {
   name                = "${var.project}-${var.env}-plan"
