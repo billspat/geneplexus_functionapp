@@ -42,3 +42,24 @@ SAKEY=$(az storage account keys list --resource-group $AZRG --account-name $AZSA
 }
 
 ```
+
+
+input to the queue processor is a list of items (document files in the blog post example, but that can be adapted to be jobs)
+
+curl command to test queue processing:
+
+```sh
+
+LOCALURL='http://localhost:7071/api/TriggerProcessing'
+AZURL="https://geneplexusml-dev-fn.azurewebsites.net/api/triggerprocessing"
+curl --request POST --location $LOCALURL \
+ --header 'Content-Type: application/json' \
+ --data-raw '{"documentList": ["sample_file11.txt", "sample_file12.txt", "sample_file13.txt", "sample_file14.txt", "sample_file15.txt"]}'
+
+curl -X POST $LOCALURL -H "Content-Type: application/json"    -d '{"documentList": ["sample_file1.txt", "sample_file2.txt", "sample_file3.txt", "sample_file4.txt", "sample_file5.txt"]}'
+
+
+curl -X POST $AZURL -H "Content-Type: application/json"    -d '{"documentList": ["sample_file1.txt", "sample_file2.txt", "sample_file3.txt", "sample_file4.txt", "sample_file5.txt"]}'
+
+
+```

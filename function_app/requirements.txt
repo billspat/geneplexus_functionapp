@@ -3,3 +3,8 @@
 azure-functions
 geneplexus
 pandas
+
+azure-storage-blob
+azure-cosmosdb-table
+
+# azure-data-tables
