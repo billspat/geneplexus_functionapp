@@ -223,20 +223,26 @@ resource "azurerm_linux_function_app" "ml_runner" {
 
   # list of all app settings : https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings
   app_settings  = {
-    FUNCTIONS_WORKER_RUNTIME = "python",
+    FUNCTIONS_WORKER_RUNTIME    = "python",
     AZURE_FUNCTIONS_ENVIRONMENT = var.azure_functions_environment,
     PYTHON_ENABLE_DEBUG_LOGGING = var.python_enable_debug_logging,
-    ENABLE_ORYX_BUILD = true,
+    ENABLE_ORYX_BUILD           = true,
     SCM_DO_BUILD_DURING_DEPLOYMENT = true,
+    
     DATA_PATH = var.data_path,
-    JOBS_PATH = var.jobs_path
+    JOBS_PATH = var.jobs_path,
+    
+    STORAGE_CONTAINER_NAME = azurerm_storage_container.jobs.name #azurerm_storage_queue.jobprocessing.name,
+    STORAGE_TABLE_NAME     = azurerm_storage_table.jobstatus.name,
+    QUEUECONNECTIONSTRING  = azurerm_storage_account.main.primary_connection_string
+
   }
 
-  site_config {
-    application_stack {
-      python_version = "3.9"
-    }
-  }
+  # site_config {
+  #   application_stack {
+  #     python_version = "3.8"
+  #   }
+  # }
 
   tags = "${local.common_tags}"
 }

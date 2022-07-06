@@ -1,5 +1,6 @@
 import logging
 import os
+from tempfile import gettempdir
 
 from azure.storage.blob import BlobServiceClient
 from azure.cosmosdb.table.tableservice import TableService
@@ -32,8 +33,10 @@ def download_blob(container_name, blob_name, connection_string):
     blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
     try:
         if blob_client.exists():
-            downloads_folder = "downloads"
-            local_path = downloads_folder + '/' + blob_name
+            downloads_folder = gettempdir()
+            local_path = os.path.join(downloads_folder, blob_name)
+            # downloads_folder = "downloads"
+            # local_path = downloads_folder + '/' + blob_name
             if not os.path.exists(downloads_folder):
                 os.makedirs(downloads_folder)
             with open(local_path, "wb") as f:
