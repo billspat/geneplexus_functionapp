@@ -1,5 +1,5 @@
 {
-  "functions": [ "simple","geneplexus_job", "processjob", "triggerprocessing" ],
+  "functions": [ "check","geneplexus_job", "processjob", "triggerprocessing" ],
   "version": "2.0",
   "functionTimeout": "00:10:00",
   "logging": {
